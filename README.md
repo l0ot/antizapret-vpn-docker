@@ -76,8 +76,8 @@ https://t.me/antizapret_support
 
 1) List of blocked domains downloaded from open registry.
 2) List parsed and rules for dns resolver (adguardhome) created.
-3) Adguardhome resend requests for blocked domains to python script dnsmap.py.
-4) Python script:
+3) Adguardhome resend requests for blocked domains to the Go dnsmap binary.
+4) The Go dnsmap binary:
    a) resolve real address for domain
    b) create fake address from 14.16.0.0/14 subnet
    c) create iptables rule to forward all packets from fake ip to real ip.
@@ -389,11 +389,11 @@ git restore config
 1. DNS Request arrives into AdGuardHome
 1. Adguard check it with blacklist rules. If domain in blacklist - return 0.0.0.0 and client not able to access domain.
 1. Adguard Send DNS request to CoreDNS service.
-1. CoreDNS Send DNS request to internal dnsmap.py server (antizapret container) and dnsmap.py sends request back to adguard
+1. CoreDNS Send DNS request to internal dnsmap server (antizapret container) and dnsmap sends request back to adguard
 1. Adguard receives requests one more time, but now applies rules with `$client=az-local` and real upstream server client (8.8.8.8 by default)
-1. If domain in whitelist - adguard will resolve its address and return to dnsmap.py
+1. If domain in whitelist - adguard will resolve its address and return to dnsmap
 1. If domain not in whitelist adguard return SERVFAIL
-1. dnsmap.py send response to adguard:
+1. dnsmap send response to adguard:
    1. If it is valid IP, then replaces it with "internal" IP from `14.16.0.0/15` subnet, add masquerade to iptables and return internal ip to adguard 
    1. If is is SERVFAIL it sends this response to client.
 1. If CoreDNS receives SERVFAIL it retries request and send it directly to Adguard. In this case rules with `$client=az-local` do not applied and request processed normally.

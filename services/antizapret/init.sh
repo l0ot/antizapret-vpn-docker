@@ -17,7 +17,6 @@ DOCKER_SUBNET="$(ipcalc "$(ip -4 addr show dev eth0 | awk '$1=="inet" {print $2;
 # save DNS variables to /etc/default/antizapret
 # in order to systemd services can access them
 cat << EOF | sponge /etc/default/antizapret
-PYTHONUNBUFFERED=1
 DOCKER_SUBNET=${DOCKER_SUBNET}
 DNS=${DNS:-"127.0.0.1"}
 CLIENT=${CLIENT:-"az-local"}
@@ -79,7 +78,7 @@ trap cleanup_doall_owner EXIT HUP INT QUIT PIPE TERM
 
 ( cat /root/antizapret/result/* /root/antizapret/config/custom/* 2>/dev/null | md5sum ) > /.config_md5
 
-# Prepare iptables for dnsmap.py
+# Prepare iptables for dnsmap
 CHAIN=dnsmap
 iptables -t nat -N "$CHAIN"
 iptables -t nat -A PREROUTING -d "${AZ_SUBNET}" -j "$CHAIN"

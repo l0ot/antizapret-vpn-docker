@@ -19,7 +19,15 @@ RUN go mod download
 COPY ./routes .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -tags netgo -ldflags '-w -s -extldflags "-static"' -o routes
 
-FROM ubuntu:24.04
+FROM golang:1.26 AS builder-dnsmap
+ARG TARGETARCH
+WORKDIR /app
+COPY ./dnsmap/go.mod ./dnsmap/go.sum ./
+RUN go mod download
+COPY ./dnsmap .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH:-amd64} go build -trimpath -ldflags '-w -s' -o dnsmap ./cmd/dnsmap
+
+FROM debian:trixie-slim
 
 WORKDIR /root
 
@@ -29,14 +37,13 @@ RUN <<-"EOT" bash -ex
 
     apt-get update -q
     apt-get install -qqy --no-install-suggests --no-install-recommends \
-        bsdmainutils \
+        bash \
+        gzip \
         iperf3 \
         curl \
         ca-certificates \
         dnsutils \
         gawk \
-        host \
-        idn \
         inetutils-ping \
         ipset \
         iptables \
@@ -45,10 +52,7 @@ RUN <<-"EOT" bash -ex
         ipcalc \
         moreutils \
         procps \
-        python3-dnslib \
-        python3-maxminddb \
-        sipcalc \
-        vim-tiny
+        sipcalc
     apt-get clean
     rm -frv /var/lib/apt/lists/*
 EOT
@@ -60,6 +64,7 @@ RUN mkdir -p /usr/share/GeoIP && \
 COPY --from=builder-api /app/app /opt/api/app
 COPY --from=builder-compose2swarm /app/compose2swarm /usr/bin/compose2swarm
 COPY --from=builder-routes /app/routes /usr/bin/routes
+COPY --from=builder-dnsmap /app/dnsmap /usr/bin/dnsmap
 COPY --from=vernette/ss-zapret2:v1.0.2 /opt/zapret2/ /opt/zapret2/
 COPY . /
 
@@ -70,7 +75,7 @@ RUN <<-"EOF" bash -ex
     cp -a /opt/zapret2/files/fake.dist /opt/zapret2/files/fake
 
     ln -sf /root/antizapret/doall.sh /usr/bin/doall
-    ln -sf /root/antizapret/dnsmap.py /usr/bin/dnsmap
+    rm -frv /dnsmap
 
     rm -frv /tmp/*
 EOF

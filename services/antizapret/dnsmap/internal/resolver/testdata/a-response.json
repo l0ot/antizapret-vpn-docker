@@ -1,0 +1,15 @@
+{
+  "qname": "example.com.",
+  "qtype": "A",
+  "rcode": 0,
+  "answers": [
+    {
+      "name": "example.com.",
+      "type": "A",
+      "ttl": 300,
+      "address": "14.16.0.2"
+    }
+  ],
+  "doh_client_ids": ["az-local"],
+  "mapping": {"192.0.2.1": "14.16.0.2"}
+}
